@@ -1,6 +1,6 @@
-#include "library.h"
-
+#include "Simple_CLI.h"
 #include <utility>
+#include <conio.h>
 
 #ifdef _WIN32
 #define CLEAN system("cls")
@@ -42,7 +42,7 @@ void Schermata::aggiorna(const vector<string> &obj) {
     for (const string& s : obj)
         max_s = max(max_s, static_cast<int>(s.length()));
 
-    out += ripeti(static_cast<int>(max_s), &printables[WALL_HORIZONTAL]) + '\n';
+    out += ripeti(static_cast<int>(max_s + 2), &printables[WALL_HORIZONTAL]) + '\n';
     for (const string & s : obj) {
         out += printables[WALL_VERTICAL];
         out += s;
@@ -50,7 +50,7 @@ void Schermata::aggiorna(const vector<string> &obj) {
         out += printables[WALL_VERTICAL];
         out += '\n';
     }
-    out += ripeti(static_cast<int>(max_s), &printables[WALL_HORIZONTAL]);
+    out += ripeti(static_cast<int>(max_s + 2), &printables[WALL_HORIZONTAL]);
     out += '\n';
     contenuto = out;
 }
@@ -59,9 +59,8 @@ void Schermata::aggiorna(const string &obj) {
     vector<string> divided;
     string temp;
     for (int i = 0; i < obj.size(); i++) {
-        if (i == '\n') {
+        if (obj[i] == '\n') {
             divided.push_back(temp);
-            i++;
             continue;
         }
         temp += obj[i];
@@ -71,7 +70,6 @@ void Schermata::aggiorna(const string &obj) {
 
 
 void Schermata::print() const {
-    CLEAN;
     cout << contenuto << endl;
 }
 
@@ -81,7 +79,7 @@ void Schermata::print() const {
  *   ========================================
  */
 
-SchermataSelettore::SchermataSelettore(string  titolo, const vector<int>& opzioni) :
+SchermataSelettore::SchermataSelettore(string  titolo, const vector<string>& opzioni) :
     Schermata(),
     titolo(std::move(titolo)),
     opzioni(opzioni)
@@ -99,24 +97,33 @@ void SchermataSelettore::calculate(const int index) const {
 // MOSTRA LA SCHERMATA IN ATTESA DI UN INVIO, AL CHE RESTITUISCE L'INDICE SELEZIONATO
 int SchermataSelettore::render() const {
     int index = 0;
+    CLEAN;
     while (true) {
-        CLEAN;
         calculate(index);
         print();
         switch (_getch()) {
+            case 3:
+                exit(0);
+            case 27:
+                return -1;
             case 'w':
                 if (index > 0) index--;
+                CLEAN;
                 break;
             case 72:
                 if (index > 0) index--;
+                CLEAN;
                 break;
             case 's':
                 if (index < opzioni.size() - 1) index++;
+                CLEAN;
                 break;
             case 80:
                 if (index < opzioni.size() - 1) index++;
+                CLEAN;
                 break;
-            case '\n':
+            case '\r':
+                CLEAN;
                 return index;
             default:
                 ;
@@ -151,18 +158,22 @@ SchermataSelettoreCustom::SchermataSelettoreCustom(string titolo, const vector<c
         }
 }
 
-void SchermataSelettoreCustom::render() {
+int SchermataSelettoreCustom::render() {
     CLEAN;
     cout << titolo << endl;
     for (int i = 0; i < titoliOpzioni.size(); i++)
         cout << titoliOpzioni[i] << ": " << opzioni[i] << endl;
     // CERCA IL VALORE INSERITO
     const char input = static_cast<char>(_getch());
+    if (input == 3) exit(0);
+    if (input == 27) return -1;
     for (int i = 0; i < titoliOpzioni.size(); i++)
         if (input == titoliOpzioni[i]) {
             result = i;
-            return;
+            CLEAN;
+            return i;
         }
+    return -1;
 }
 
 int SchermataSelettoreCustom::getResult() const { return result; }

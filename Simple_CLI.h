@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
-#include <conio.h>
 
 using namespace std;
 
@@ -30,7 +29,7 @@ namespace schermate {
     public:
         unordered_map<int, char> printables = {
             {WALL_HORIZONTAL, '-'},
-            {WALL_VERTICAL, 'p'},
+            {WALL_VERTICAL, '|'},
             {THICK, '='},
             {BLANK, ' '},
             {FILL, '#'},
@@ -48,8 +47,6 @@ namespace schermate {
 
         ~Schermata() = default;
         void print() const;
-        volatile void calculate();
-        volatile int render();
     };
 
     //      -----{ SELETTORI }-----
@@ -59,15 +56,15 @@ namespace schermate {
     */
     class SchermataSelettore : public Schermata {
         string titolo;
-        vector<int> opzioni;
+        vector<string> opzioni;
         void calculate(int index) const;
         int selezionato = 0;
     public:
-        explicit SchermataSelettore(string  titolo, const vector<int>& opzioni);
+        explicit SchermataSelettore(string  titolo, const vector<string>& opzioni);
         int render() const;
     };
 
-    class SchermataSelettoreCustom : Schermata {
+    class SchermataSelettoreCustom : public Schermata {
         int result = -1;
         string titolo;
         vector<string> opzioni;
@@ -75,7 +72,7 @@ namespace schermate {
     public:
         explicit SchermataSelettoreCustom(string titolo, const vector<char>& titoliOpzioni,
             const vector<string>& opzioni, bool autoRender = true);
-        void render();
+        int render();
         int getResult() const;
     };
 }
