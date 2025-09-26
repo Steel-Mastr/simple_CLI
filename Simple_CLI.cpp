@@ -58,18 +58,19 @@ void Schermata::aggiorna(const vector<string> &obj) {
 void Schermata::aggiorna(const string &obj) {
     vector<string> divided;
     string temp;
-    for (int i = 0; i < obj.size(); i++) {
-        if (obj[i] == '\n') {
+    for (const char i : obj) {
+        if (i == '\n') {
             divided.push_back(temp);
             continue;
         }
-        temp += obj[i];
+        temp += i;
     }
     aggiorna(divided);
 }
 
 
-void Schermata::print() const {
+void Schermata::print(const bool del) const {
+    if (del) CLEAN;
     cout << contenuto << endl;
 }
 
@@ -176,4 +177,6 @@ int SchermataSelettoreCustom::render() {
     return -1;
 }
 
-int SchermataSelettoreCustom::getResult() const { return result; }
+char SchermataSelettoreCustom::getResult() const { return titoliOpzioni[result]; }
+
+// TODO. Implementare una schermata di ricerca filtrata

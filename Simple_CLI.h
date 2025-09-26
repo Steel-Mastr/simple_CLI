@@ -46,7 +46,7 @@ namespace schermate {
         void aggiorna(const string& obj);
 
         ~Schermata() = default;
-        void print() const;
+        void print(bool del = false) const;
     };
 
     //      -----{ SELETTORI }-----
@@ -71,8 +71,8 @@ namespace schermate {
         vector<char> titoliOpzioni;
     public:
         explicit SchermataSelettoreCustom(string titolo, const vector<char>& titoliOpzioni,
-            const vector<string>& opzioni, bool autoRender = true);
+            const vector<string>& opzioni, bool autoRender = false);
         int render();
-        int getResult() const;
+        char getResult() const;
     };
 }
