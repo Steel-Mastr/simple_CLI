@@ -55,13 +55,15 @@ namespace schermate {
      *  assegnare alcun carattere particolare alle opzioni
     */
     class SchermataSelettore : public Schermata {
+    protected:
         string titolo;
-        vector<string> opzioni;
-        void calculate(int index) const;
         int selezionato = 0;
+        vector<string> opzioni;
+        void calculate() const;
     public:
         explicit SchermataSelettore(string  titolo, const vector<string>& opzioni);
-        int render() const;
+        ~SchermataSelettore() = default;
+        int render();
     };
 
     class SchermataSelettoreCustom : public Schermata {
@@ -72,7 +74,21 @@ namespace schermate {
     public:
         explicit SchermataSelettoreCustom(string titolo, const vector<char>& titoliOpzioni,
             const vector<string>& opzioni, bool autoRender = false);
+        ~SchermataSelettoreCustom() = default;
         int render();
         char getResult() const;
+    };
+
+    class SchermataSelettoreLarge : public SchermataSelettore {
+        int size;
+        int shift = 0;
+        bool trueLarge = false;
+        void calculate();
+        public:
+        string moreUp = "[...]";
+        string moreDown = "[...]";
+        explicit SchermataSelettoreLarge(string titolo, const vector<string>& opzioni, int size);
+        ~SchermataSelettoreLarge() = default;
+        int render();
     };
 }
