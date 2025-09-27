@@ -10,6 +10,7 @@
 
 using namespace schermate;
 
+
 /*
  *   ==============================
  *   ========== GENERALI ==========
@@ -22,6 +23,14 @@ string ripeti(const int rep, const string& s) {
         out += s;
     return out;
 }
+
+string toLower(const string& s) {
+    string out;
+    for (const char c : s)
+        out += static_cast<char>(tolower(c));
+    return out;
+}
+
 
 /*
  *   ========================================
@@ -74,6 +83,10 @@ void Schermata::print(const bool del) const {
     cout << contenuto << endl;
 }
 
+void Schermata::setContenuto(const string &cont) {
+    contenuto = cont;
+}
+
 /*
  *   ========================================
  *   ========== SCHERMATA SELETTORE =========
@@ -89,11 +102,14 @@ SchermataSelettore::SchermataSelettore(string  titolo, const vector<string>& opz
 
 // AGGIORNA LA SCHERMATA
 void SchermataSelettore::calculate() const {
-    cout << titolo << endl;
+    string out;
+    out += titolo + '\n';
+    string sel;
     for (int i = 0; i < opzioni.size(); i++) {
-        const char select = i == selezionato ? printables.at(SELECTOR) : printables.at(UNSELECTED);
-        cout << select << " " << opzioni[i] << endl;
+        sel = (i == selezionato ? printables.at(SELECTOR) : printables.at(UNSELECTED));
+        out += sel + " " + opzioni[i] + '\n';
     }
+    cout << out;
 }
 
 // MOSTRA LA SCHERMATA IN ATTESA DI UN INVIO, AL CHE RESTITUISCE L'INDICE SELEZIONATO
@@ -102,7 +118,6 @@ int SchermataSelettore::render() {
     CLEAN;
     while (true) {
         calculate();
-        // TODO. check id needed - print();
         switch (_getch()) {
             case 3:
                 exit(0);
@@ -127,6 +142,7 @@ int SchermataSelettore::render() {
     }
 }
 
+
 /*
  *   ===============================================
  *   ========== SCHERMATA SELETTORE CUSTOM =========
@@ -146,9 +162,14 @@ SchermataSelettoreCustom::SchermataSelettoreCustom(string titolo, const vector<c
 // RENDERIZZA LA SCHERMATA
 int SchermataSelettoreCustom::render() {
     CLEAN;
-    cout << titolo << endl;
-    for (int i = 0; i < titoliOpzioni.size(); i++)
-        cout << titoliOpzioni[i] << ": " << opzioni[i] << endl;
+    string out;
+    out += titolo + '\n';
+    string sel;
+    for (int i = 0; i < titoliOpzioni.size(); i++) {
+        sel = titoliOpzioni[i];
+        out += sel + ": " + opzioni[i] + '\n';
+    }
+    cout << out;
     // CERCA IL VALORE INSERITO
     const char input = static_cast<char>(_getch());
     if (input == 3) exit(0);
@@ -164,6 +185,7 @@ int SchermataSelettoreCustom::render() {
 
 // RESTITUISCE L'ULTIMO RISULTATO SELEZIONATO
 char SchermataSelettoreCustom::getResult() const { return titoliOpzioni[result]; }
+
 
 /*
  *   ==============================================
@@ -229,6 +251,94 @@ int SchermataSelettoreLarge::render() {
                 return selezionato;
             default:
                 ;
+        }
+    }
+}
+
+
+/*
+ *   =================================================
+ *   ========== SCHERMATA SELETTORE FILTRATA =========
+ *   =================================================
+*/
+
+// IL COSTRUTTORE CREA UNA SCHERMATA SELETTORE FILTRATA SECONDO LE REGOLE DI SCHERMATA SELETTORE
+SchermataSelettoreFiltrata::SchermataSelettoreFiltrata(string titolo, const vector<string> &opzioni, const int size) :
+    SchermataSelettoreLarge(std::move(titolo), opzioni, size) {}
+
+void SchermataSelettoreFiltrata::calculateNewSet() {
+    opzioniFiltrate = {};
+    for (const string& s : opzioni)
+        if (toLower(s).find(toLower(filtro)) != string::npos)
+            opzioniFiltrate.emplace_back(s);
+}
+
+void SchermataSelettoreFiltrata::calculate() {
+    string out;
+    out += titolo + '\n';
+    out += filtro + '\n';
+    if (shift < 0) shift = 0;
+    out += (shift > 0 ? moreUp : "") + '\n';
+    string sel;
+    for (int i = 0; i < opzioniFiltrate.size(); i++) {
+        sel = (selezionato == i) ? printables[SELECTOR] : printables[UNSELECTED];
+        out += sel + " " + opzioniFiltrate[i] + '\n';
+    }
+    if (shift < opzioniFiltrate.size() - size)
+        out += moreDown;
+    CLEAN;
+    cout << out << endl;
+}
+
+int SchermataSelettoreFiltrata::render() {
+    filtro = "";
+    bool cambioFiltro = true;
+    while (true) {
+        if (cambioFiltro) {
+            calculateNewSet();
+            selezionato = 0;
+            shift = 0;
+        }
+        cambioFiltro = false;
+        calculate();
+        switch (const char in = static_cast<char>(_getch())) {
+            case 3:
+                exit(0);
+            case 27:
+                return -1;
+            case 72:
+                if (selezionato == 0) break;
+
+                selezionato--;
+                if (selezionato < shift + 1)
+                    shift--;
+                break;
+            case 80:
+                if (selezionato == opzioniFiltrate.size() - 1) break;
+
+                selezionato++;
+                if (shift + size > opzioniFiltrate.size()) break;
+                if (selezionato > shift + 1)
+                    shift++;
+                break;
+            case '\r':
+                CLEAN;
+                for (int i = 0; i < opzioni.size(); i++)
+                    if (opzioni[i] == opzioniFiltrate[selezionato]) return i;
+            case 8:
+                filtro.pop_back();
+                cambioFiltro = true;
+                break;
+            case 127:
+                filtro = "";
+                cambioFiltro = true;
+                break;
+            default:
+                if (in > 32) {
+                    filtro += in;
+                    cambioFiltro = true;
+                }
+                break;
         }
     }
 }
