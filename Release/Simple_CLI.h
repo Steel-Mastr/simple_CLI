@@ -19,6 +19,10 @@ namespace schermate {
         CIRCLE_SMALL,
         SELECTOR,
         UNSELECTED,
+        ARROW_UP,
+        ARROW_DOWN,
+        ARROW_RIGHT,
+        ARROW_LEFT
     };
     //      -----{ GENERICO }-----
 
@@ -38,7 +42,11 @@ namespace schermate {
             {CIRCLE_BIG, 'O'},
             {CIRCLE_SMALL, 'o'},
             {SELECTOR, '>'},
-            {UNSELECTED, '-'}
+            {UNSELECTED, '-'},
+            {ARROW_UP, '^'},
+            {ARROW_DOWN, 'v'},
+            {ARROW_LEFT, '<'},
+            {ARROW_RIGHT, '>'}
         };
 
         explicit Schermata(const vector<string>& contenuto);
@@ -50,6 +58,7 @@ namespace schermate {
         ~Schermata() = default;
         void print(bool del = false) const;
         void setContenuto(const string& cont);
+        string getContenuto();
     };
 
     //      -----{ SELETTORI }-----
@@ -62,7 +71,7 @@ namespace schermate {
         string titolo;
         int selezionato = 0;
         vector<string> opzioni;
-        void calculate() const;
+        void calculate();
     public:
         explicit SchermataSelettore(string  titolo, const vector<string>& opzioni);
         ~SchermataSelettore() = default;
@@ -88,10 +97,8 @@ namespace schermate {
         int size;
         int shift = 0;
         bool trueLarge = false;
-        void calculate();
     public:
-        string moreUp = "[...]";
-        string moreDown = "[...]";
+        void calculate();
         explicit SchermataSelettoreLarge(string titolo, const vector<string>& opzioni, int size);
         ~SchermataSelettoreLarge() = default;
         int render();
