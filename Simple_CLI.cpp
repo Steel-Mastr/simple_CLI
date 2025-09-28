@@ -67,34 +67,45 @@ void remShift(int& shift, const int selezionato) {
 
 // Costruttori (creano una schermata con i bordi) - una riga per stringa del vettore
 Schermata::Schermata(const vector<string>& contenuto) {
+    // Richiama la funziona aggiorna
     aggiorna(contenuto);
 }
 // Costruttori (creano una schermata con i bordi) - una stringa unica con righe separate da '/n'
 Schermata::Schermata(const string &contenuto) {
+    // Richiama la funziona aggiorna
     aggiorna(contenuto);
 }
 
 // Aggiornamento (rinnovano una schermata con i bordi) - una riga per stringa del vettore
 void Schermata::aggiorna(const vector<string> &obj) {
     string out;
-    int max_s = 0;
+
+    // Calcola la lunghezza dell'elemento più lungo
+    int max_s;
     for (const string& s : obj)
         max_s = max(max_s, static_cast<int>(s.length()));
 
+    //  Aggiungi la parete superiore
     out += ripeti(static_cast<int>(max_s + 2), &printables[WALL_HORIZONTAL]) + '\n';
     for (const string & s : obj) {
+        // Aggiungi la parete sinistra
         out += printables[WALL_VERTICAL];
+        // Aggiungi il contenuto
         out += s;
+        // Aggiungi il padding per raggiungere la lunghezza massima
         out += ripeti(static_cast<int>(max_s - s.length()), " ");
+        // Aggiungi la parete destra e vai a capo
         out += printables[WALL_VERTICAL];
         out += '\n';
     }
+    // Aggiungi la parete inferiore
     out += ripeti(static_cast<int>(max_s + 2), &printables[WALL_HORIZONTAL]);
     out += '\n';
     contenuto = out;
 }
 // Aggiornamento (rinnovano una schermata con i bordi) - una stringa unica con righe separate da '/n'
 void Schermata::aggiorna(const string &obj) {
+    // Trasforma in vettore
     vector<string> divided;
     string temp;
     for (const char i : obj) {
@@ -104,6 +115,8 @@ void Schermata::aggiorna(const string &obj) {
         }
         temp += i;
     }
+
+    // Aggiorna con il protocollo standard
     aggiorna(divided);
 }
 
@@ -139,10 +152,13 @@ SchermataSelettore::SchermataSelettore(string  titolo, const vector<string>& opz
 // Aggiorna la schermata
 void SchermataSelettore::calculate() {
     string out;
+    // Intestazione con il titolo
     out += titolo + '\n';
+
+    // Aggiungi tutti gli elementi della lista
     string sel;
     for (int i = 0; i < opzioni.size(); i++) {
-        sel = (i == selezionato ? printables.at(SELECTOR) : printables.at(UNSELECTED));
+        sel = (i == selezionato ? printables[SELECTOR] : printables[UNSELECTED]);
         out += sel + " " + opzioni[i] + '\n';
     }
     setContenuto(out);
@@ -153,8 +169,11 @@ void SchermataSelettore::calculate() {
 int SchermataSelettore::render() {
     selezionato = 0;
     while (true) {
+        // Stampa la schermata
         calculate();
         print(true);
+
+        // Leggi l'imput
         switch (_getch()) {
             case 3:
                 exit(0);
@@ -190,22 +209,33 @@ SchermataSelettoreCustom::SchermataSelettoreCustom(string titolo, const vector<c
     titolo(std::move(titolo)), opzioni(opzioni), titoliOpzioni(titoliOpzioni) {
     if (titoliOpzioni.size() != opzioni.size())
         throw length_error("Lunghezze inconsistenti tra titoliOpzioni ed opzioni");
-    // CALCOLA LA SCHERMATA
+    // Renderizza la schermata se richiesto
    if (autoRender) render();
 }
 
-// Renderizza la schermata, restituisce l'indice del risultato
-int SchermataSelettoreCustom::render() {
+void SchermataSelettoreCustom::calculate() {
     string out;
+
+    // Intestazione con il titolo
     out += titolo + '\n';
+
+    // Aggiungi tutte le opzioni
     string sel;
     for (int i = 0; i < titoliOpzioni.size(); i++) {
         sel = titoliOpzioni[i];
         out += sel + ": " + opzioni[i] + '\n';
     }
+    // Imposta il contenuto
     setContenuto(out);
+}
+
+// Renderizza la schermata, restituisce l'indice del risultato
+int SchermataSelettoreCustom::render() {
+    // Stampa il contenuto a schermo
+    calculate();
     print(true);
-    // CERCA IL VALORE INSERITO
+
+    // Cerca il valore inserito
     const char input = static_cast<char>(_getch());
     if (input == 3) exit(0);
     if (input == 27) return -1;
@@ -239,20 +269,26 @@ SchermataSelettoreLarge::SchermataSelettoreLarge(string titolo, const vector<str
 // Aggiorna la schermata
 void SchermataSelettoreLarge::calculate() {
     string out;
+    // Intestazione con il titolo
     out += titolo + '\n';
     if (shift < 0) shift = 0;
+    // Se necessaria, aggiungi ARROW_UP
     string selUpDown;
     selUpDown = (shift > 0) ? printables[ARROW_UP] : ' ';
     out += selUpDown + '\n';
+    // Aggiungi tutte le opzioni
     string sel;
     for (int i = shift; (i < shift + size) && (i < opzioni.size()); i++) {
         sel = ((selezionato == i) ? printables[SELECTOR] : printables[UNSELECTED]);
         out += sel + " " + opzioni[i] + '\n';
     }
+
+    // Se necessaria, aggiungi ARROW_DOWN
     selUpDown = (shift < opzioni.size() - size) ? printables[ARROW_DOWN] : ' ';
     out += selUpDown;
+
+    // Imposta il contenuto
     setContenuto(out);
-    print(true);
 }
 
 // Renderizza la schermata restituendo l'indice della selezione
@@ -260,8 +296,11 @@ int SchermataSelettoreLarge::render() {
     selezionato = 0;
     shift = 0;
     while (true) {
+        // Stampa la schermata
         calculate();
         print(true);
+
+        // Leggi l'input
         switch (_getch()) {
             case 3:
                 exit(0);
@@ -310,21 +349,30 @@ void SchermataSelettoreFiltrata::calculateNewSet() {
 // Aggiorna la schermata
 void SchermataSelettoreFiltrata::calculate() {
     string out;
+
+    // Intestazione con titolo e filtro
     out += titolo + '\n';
     out += filtro + '\n';
+
+    // Se necessaria, aggiungi ARROW_UP
     if (shift < 0) shift = 0;
     string selUpDown;
     selUpDown = (shift > 0) ? printables[ARROW_UP] : ' ';
     out += selUpDown + '\n';
+
+    // Aggiungi tutte le opzioni (filtrate)
     string sel;
     for (int i = 0; i < opzioniFiltrate.size(); i++) {
         sel = (selezionato == i) ? printables[SELECTOR] : printables[UNSELECTED];
         out += sel + " " + opzioniFiltrate[i] + '\n';
     }
+
+    // Se necessaria, aggiungi ARROW_DOWN
     selUpDown = (shift < opzioniFiltrate.size() - size) ? printables[ARROW_DOWN] : ' ';
     out += selUpDown;
+
+    // Imposta il contenuto
     setContenuto(out);
-    print(true);
 }
 
 // Renderizza la schermata restituendo l'indice della selezione
@@ -332,14 +380,19 @@ int SchermataSelettoreFiltrata::render() {
     filtro = "";
     bool cambioFiltro = true;
     while (true) {
+        // Calcola il nuovo set solo se il filtro cambia
         if (cambioFiltro) {
             calculateNewSet();
             selezionato = 0;
             shift = 0;
         }
         cambioFiltro = false;
+
+        // Stampa la schermata
         calculate();
         print(true);
+
+        // Leggi l'input
         switch (const char in = static_cast<char>(_getch())) {
             case 3:
                 exit(0);

@@ -87,6 +87,7 @@ namespace schermate {
         string titolo;
         vector<string> opzioni;
         vector<char> titoliOpzioni;
+        void calculate();
     public:
         explicit SchermataSelettoreCustom(string titolo, const vector<char>& titoliOpzioni,
             const vector<string>& opzioni, bool autoRender = false);
