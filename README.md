@@ -1,16 +1,20 @@
 # Simple CLI
 Simple CLI è una soluzione semplice per l'utilizzo di interfacce CLI senza la fatica di doverne creare di nuove.
 Per ora esistono 3 tipi di interfacce:
+
 ## Lista delle schermate
+
 ### Semplici
-Schermata base (schermate::Schermata):
-<pre>
+
+##### Schermata base (schermate::Schermata):
+```text
 ----------------
 | Hello World! |
 -----------------
-</pre>
-Schermata scorrevole (in arrivo):
-<pre>
+```
+
+##### Schermata scorrevole (in arrivo):
+```text
 ---------------
 | Intestazione|
 |             |
@@ -22,17 +26,19 @@ Schermata scorrevole (in arrivo):
 | Riga6       |
 | v           |
 ---------------
-</pre>
+```
+
 ### Selettori
-Selettore semplice (schermate::SchermataSelettore):
-<pre>
+##### Selettore semplice (schermate::SchermataSelettore):
+```text
 Titolo:
 > Opzione 1
 - Opzione 2
 - Opzione 3
-</pre>
-Selettore scorrevole (schermate::SchermataSelettoreLarge):
-<pre>
+```
+
+##### Selettore scorrevole (schermate::SchermataSelettoreLarge):
+```text
 Titolo:
 ^
 - Opzione 4
@@ -46,12 +52,12 @@ Titolo:
 - Opzione 12
 - Opzione 13
 v
-</pre>
-Selettore filtrato (schermate::SchermataSelettoreFiltrata):
-<pre>
+```
+
+##### Selettore filtrato (schermate::SchermataSelettoreFiltrata):
+```text
 Titolo:
 filtro
-
 - opzioneFiltro1
 - opzioneFiltro2
 > opzioneFiltro3
@@ -61,28 +67,45 @@ filtro
 - Questo è un filtro
 - filtro1
 v
-</pre>
-Selettore custom (schermate::SchermataSelettoreCustom):
-<pre>
+```
+
+##### Selettore custom (schermate::SchermataSelettoreCustom):
+```text
 Titolo:
 1: Opzione 1
 2: Opzione 2
 a: Opzione a
 x: Opzione x
-</pre>
+```
 
 ## Funzioni delle schermate
+
 ### Semplici
-- ```costruttori```: creano l'oggetto circondato da bordi, i costruttori standard (senza argomenti) non aggiungono i bordi
-- ```aggiorna```: aggiorna il contenuto aggiungendo i bordi
-- ```print```: stampa il contenuto a schermo
-- ```setContenuto```: aggiorna il contenuto senza aggiungere i bordi
-- ```getContenuto```: restituisce il contenuto così come viene stampato a schermo
-Si può trovare inoltre una varabile pubblica chiamata ```printables``` di tipo unordered_map, che mappa i vari tipi di oggetti della schermata a singoli caratteri 
+- `costruttori`: creano l'oggetto circondato da bordi, i costruttori standard (senza argomenti) non aggiungono i bordi
+- `aggiorna`: aggiorna il contenuto aggiungendo i bordi
+- `print`: stampa il contenuto a schermo
+- `setContenuto`: aggiorna il contenuto senza aggiungere i bordi
+- `getContenuto`: restituisce il contenuto così come viene stampato a schermo
+
+Si può trovare inoltre una varabile pubblica chiamata `printables` di tipo unordered_map, che mappa i vari tipi di oggetti della schermata a singoli caratteri
+
 ### Selettori
-##### Funzioni comuni:
-- ```costruttori```: creano un selettore senza renderizzarlo, fa eccezione il selettore cusom, in cui si può scegliere se renderizzare o meno
-- ```render```: renderizza automaticamente la schermata, restituendo l'intero corrispondente all'indice dell'opzione selezionata nel vettore che è stato dato al costruttore
-##### Funzioni specifiche:
+
+#### Funzioni comuni:
+- `costruttori`: creano un selettore senza renderizzarlo, fa eccezione il selettore cusom, in cui si può scegliere se renderizzare o meno
+- `render`: renderizza automaticamente la schermata, restituendo l'intero corrispondente all'indice dell'opzione selezionata nel vettore che è stato dato al costruttore
+
+#### Funzioni specifiche:
 Selettore custom
-- ```getResult```: restituisce il carattere associato al risultato
+- `getResult`: restituisce il carattere associato al risultato
+
+## Installazione
+Il pacchetto si può trovare su https://www.nuget.org/packages/Simple_CLI#readme-body-tab.
+Installazione con .NET:
+``` DOTNET
+dotnet add package Simple_CLI --version 1.4.2
+```
+Installazione con PMC
+``` PMC
+NuGet\Install-Package Simple_CLI -Version 1.4.2
+```
