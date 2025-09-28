@@ -11,7 +11,7 @@ Questa interfaccia è la più basilare, ma anche la più potente: qualsiasi sia 
 Ci sono 3 tipi di funzioni:
 - costruttori
   - <code>Schermata(vector<string> contenuto)</code>: Questa funzione inizializza una schermata il cui contenuto sia composto dalle stringhe, che però non devono contenere '\n'
-  - <code>Schermata(string contenuto)</code>: Questa funzione è equivalente alla precedente, ma accetta una sola stringa contente '\n' come separatore tra righe
+  - <code>Schermata(string contenuto)</code>: Questa funzione è equivalente alla precedente, ma accetta una sola stringa contente <code>'\n'</code> come separatore tra righe
   - <code>Schermata()</code>: Questa funzione inizializza una schermata totalmente vuota
 - aggiornamenti
   - <code>aggiorna(vector<string> contenuto)</code>: Questa funzione aggiorna il contenuto secondo il metodo di Schermata(vector<string> contenuto)
@@ -28,19 +28,6 @@ Questa interfaccia è molto utile per selezionare opzioni, in quanto permette di
 Ci sono due funzioni:
 - <code>SchermataSelettore(string  titolo, const vector<string> opzioni)</code>: Questa funzione permette la creazione di una schermata selettore con titolo ed opzioni
 - <code>int render()</code>: Questa funzione renderizza automaticamente la schermata finchè non è stata scelta un'opzione, quando sarà premuto invio sarà restituito l'indice dell'elemento selezionato nel vettore iniziale
-## Schermata selettore custom
-Questa interfaccia, simile a Schermata selettore, varia da essa per una sola caratteristica: si basa sull'inserimento diretto dell'indice anzichè selezionare manualmente l'opzione, il formato è:
-<pre><code>
-Titolo:
-1: Opzione 1
-2: Opzione 2
-a: Opzione a
-x: Opzione x
-</code></pre>
-Ci sono tre funzioni:
-- <code>SchermataSelettoreCustom(string titolo, vector<char> titoliOpzioni, vector<string> opzioni, bool autoRender)</code>: Questa funzione crea una schermata custom con i dati concessi
-- <code>render()</code>: Questa funzione renderizza la schermata in maniera statica, poi rimane in attesa di un input
-- <code>getResult()</code>: Questa funzione restituisce l'input
 ## Schermata selettore grande
 Questa interfaccia, basata su Schermata selettore, permette l'aggiunta di liste più lunghe, aggiungendo la funzionalità di scroll, il formato è:
 <pre><code>
@@ -62,3 +49,32 @@ Ci sono due variabili, ossia moreUp e moreDown, che permettono di customizzare i
 Ci sono 2 funzioni:
 - <code>SchermataSelettoreLarge(string titolo, vector<string> opzioni, int size)</code>: Questa funzione crea una schermata selettore grande con i dati concessi, la lunghezza massima di una lista prima di far comparire i tag <code>moreUp</code> e <code>moreDown</code> è size
 - <code>int render()</code>: Questa funzione renderizza automaticamente la schermata finchè non è stata scelta un'opzione, quando sarà premuto invio sarà restituito l'indice dell'elemento selezionato nel vettore iniziale
+## Schermata selettore filtrata
+Questa interfaccia, basata su Schermata selettore grande, permette di filtrare il contenuto in tempo reale, il formato è:
+<pre><code>
+Titolo:
+filtro
+
+- opzioneFiltro1
+- opzioneFiltro2
+> opzioneFiltro3
+- opzioneFiltro4
+- filtro5
+[...]
+</code></pre>
+Ci sono 2 funzioni:
+- <code>SchermataSelettoreFiltrata(string titolo, vector<string> opzioni, int size)</code>: Questa funzione crea una schermata selettore filtrata secondo lo schema di Schermata selettore grande
+- <code>int render()</code>: Questa funzione renderizza automaticamente la schermata finchè non è stata scelta un'opzione, quando sarà premuto invio sarà restituito l'indice dell'elemento selezionato nel vettore iniziale
+## Schermata selettore custom
+Questa interfaccia, simile a Schermata selettore, varia da essa per una sola caratteristica: si basa sull'inserimento diretto dell'indice anzichè selezionare manualmente l'opzione, il formato è:
+<pre><code>
+Titolo:
+1: Opzione 1
+2: Opzione 2
+a: Opzione a
+x: Opzione x
+</code></pre>
+Ci sono tre funzioni:
+- <code>SchermataSelettoreCustom(string titolo, vector<char> titoliOpzioni, vector<string> opzioni, bool autoRender)</code>: Questa funzione crea una schermata custom con i dati concessi
+- <code>render()</code>: Questa funzione renderizza la schermata in maniera statica, poi rimane in attesa di un input
+- <code>getResult()</code>: Questa funzione restituisce l'input
