@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>Simple_CLI</id>
+        <version>1.4.2.1</version>
+        <title>Essere... selettivi</title>
+        <authors>Jacopo Cicuti</authors>
+        <description>La libreria permette di inizializzare in modo semplicissimo una interfaccia CLI</description>
+        
+        <projectUrl>https://github.com/Steel-Mastr/simple_CLI</projectUrl>
+        <repository type="git" url="https://github.com/Steel-Mastr/simple_CLI" />
+        <tags>cli cplusplus native</tags>
+        <readme>README.md</readme>
+
+       <license type="content">LICENSE.md</license>
+        
+        <dependencies>
+            <group targetFramework="native">
+                <dependency id="Microsoft.Cpp" version="14.0" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <!-- Corrected file paths and targets -->
+        <file src="Release\Simple_CLI.lib" target="build\native\lib\" />
+        <file src="Simple_CLI.h" target="build\native\include\" />
+        <file src="README.md" target="" />
+        <file src="LICENSE.md" target="" />
+    </files>
+</package>
