@@ -6,8 +6,6 @@
 
 using namespace std;
 
-
-
 namespace schermate {
     enum PrintableTypes {
         WALL_HORIZONTAL,
@@ -22,7 +20,11 @@ namespace schermate {
         ARROW_UP,
         ARROW_DOWN,
         ARROW_RIGHT,
-        ARROW_LEFT
+        ARROW_LEFT,
+        CHECKED,
+        UNCHECKED,
+        CONTAIN_LEFT,
+        CONTAIN_RIGHT
     };
     //      -----{ GENERICO }-----
 
@@ -32,7 +34,11 @@ namespace schermate {
     class Schermata {
     protected:
         string contenuto;
+        bool hasBordi = false;
     public:
+        int paddingHorizontal = 0;
+        int paddingVertical = 0;
+
         unordered_map<int, char> printables = {
             {WALL_HORIZONTAL, '-'},
             {WALL_VERTICAL, '|'},
@@ -46,18 +52,20 @@ namespace schermate {
             {ARROW_UP, '^'},
             {ARROW_DOWN, 'v'},
             {ARROW_LEFT, '<'},
-            {ARROW_RIGHT, '>'}
+            {ARROW_RIGHT, '>'},
+            {CHECKED, 'X'},
+            {UNCHECKED, ' '},
+            {CONTAIN_LEFT, '['},
+            {CONTAIN_RIGHT, ']'}
         };
 
-        explicit Schermata(const vector<string>& contenuto);
-        explicit Schermata(const string& contenuto);
+        explicit Schermata(string& contenuto, bool bordi);
         explicit Schermata() = default;
-        void aggiorna(const vector<string>& obj);
-        void aggiorna(const string& obj);
+        void aggiorna(string& obj, bool bordi);
 
         ~Schermata() = default;
         void print(bool del = false) const;
-        void setContenuto(const string& cont);
+        void setContenuto(string& cont, bool bordi);
         string getContenuto();
     };
 
@@ -73,7 +81,7 @@ namespace schermate {
         vector<string> opzioni;
         void calculate();
     public:
-        explicit SchermataSelettore(string  titolo, const vector<string>& opzioni);
+        explicit SchermataSelettore(string  titolo, const vector<string>& opzioni, bool bordi = false);
         ~SchermataSelettore() = default;
         int render();
     };
@@ -90,7 +98,7 @@ namespace schermate {
         void calculate();
     public:
         explicit SchermataSelettoreCustom(string titolo, const vector<char>& titoliOpzioni,
-            const vector<string>& opzioni, bool autoRender = false);
+            const vector<string>& opzioni, bool autoRender = false, bool bordi = false);
         ~SchermataSelettoreCustom() = default;
         int render();
         char getResult() const;
@@ -107,7 +115,7 @@ namespace schermate {
         bool trueLarge = false;
     public:
         void calculate();
-        explicit SchermataSelettoreLarge(string titolo, const vector<string>& opzioni, int size);
+        explicit SchermataSelettoreLarge(string titolo, const vector<string>& opzioni, int size, bool bordi = false);
         ~SchermataSelettoreLarge() = default;
         int render();
     };
@@ -123,8 +131,39 @@ namespace schermate {
         void calculate();
         void calculateNewSet();
     public:
-        explicit SchermataSelettoreFiltrata(string titolo, const vector<string>& opzioni, int size);
+        explicit SchermataSelettoreFiltrata(string titolo, const vector<string>& opzioni, int size, bool bordi = false);
         ~SchermataSelettoreFiltrata() = default;
         int render();
+    };
+
+    /*  La classe SchermataQuestionario serve per accettare un input vari e multipli, navigando tra le
+     *  opzioni con le frecce direzionali
+    */
+    class SchermataQuestionario : public Schermata {
+    public:
+        enum questionTypes {
+            INSERIMENTO,
+            BOOLEANO,
+            SCALA
+        };
+
+        struct formElement {
+            string titolo;
+            questionTypes questionType = BOOLEANO;
+            int size = 0;
+            int& outInt;
+            string& outString;
+        };
+    protected:
+        vector<formElement> opzioni;
+        string titolo;
+        void calculate();
+        int selezionato = 0;
+    public:
+        SchermataQuestionario(string  titolo, vector<formElement> opzioni);
+        SchermataQuestionario() = default;
+        ~SchermataQuestionario() = default;
+
+        void render();
     };
 }

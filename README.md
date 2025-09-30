@@ -6,14 +6,14 @@ Per ora esistono 3 tipi di interfacce:
 
 ### Semplici
 
-##### Schermata base (schermate::Schermata):
+##### Schermata base `schermate::Schermata`:
 ```text
 ----------------
 | Hello World! |
 -----------------
 ```
 
-##### Schermata scorrevole (in arrivo):
+##### Schermata scorrevole `in arrivo`:
 ```text
 ---------------
 | Intestazione|
@@ -29,7 +29,7 @@ Per ora esistono 3 tipi di interfacce:
 ```
 
 ### Selettori
-##### Selettore semplice (schermate::SchermataSelettore):
+##### Selettore semplice `schermate::SchermataSelettore`:
 ```text
 Titolo:
 > Opzione 1
@@ -37,7 +37,7 @@ Titolo:
 - Opzione 3
 ```
 
-##### Selettore scorrevole (schermate::SchermataSelettoreLarge):
+##### Selettore scorrevole `schermate::SchermataSelettoreLarge`:
 ```text
 Titolo:
 ^
@@ -54,7 +54,7 @@ Titolo:
 v
 ```
 
-##### Selettore filtrato (schermate::SchermataSelettoreFiltrata):
+##### Selettore filtrato `schermate::SchermataSelettoreFiltrata`:
 ```text
 Titolo:
 filtro
@@ -69,7 +69,7 @@ filtro
 v
 ```
 
-##### Selettore custom (schermate::SchermataSelettoreCustom):
+##### Selettore custom `schermate::SchermataSelettoreCustom`:
 ```text
 Titolo:
 1: Opzione 1
@@ -78,11 +78,27 @@ a: Opzione a
 x: Opzione x
 ```
 
+### Questionari
+
+##### Schermata questionario `schermate::SchermataQuestionario`:
+```text
+Titolo:
+> Questo è un selettore booleano: [X]
+
+- Questo è un altro selettore booleano: [ ]
+
+- Questo è un selettore di scala, 
+pti: 12345
+    [-----]
+   
+- Questa è una casella di inserimento di testo: Hello World!
+```
+
 ## Funzioni delle schermate
 
 ### Semplici
 - `costruttori`: creano l'oggetto circondato da bordi, i costruttori standard (senza argomenti) non aggiungono i bordi
-- `aggiorna`: aggiorna il contenuto aggiungendo i bordi
+- `aggiorna`: aggiorna il contenuto, permette di scegliere se avere o meno i bordi
 - `print`: stampa il contenuto a schermo
 - `setContenuto`: aggiorna il contenuto senza aggiungere i bordi
 - `getContenuto`: restituisce il contenuto così come viene stampato a schermo
@@ -93,19 +109,35 @@ Si può trovare inoltre una variabile pubblica chiamata `printables` di tipo uno
 
 #### Funzioni comuni:
 - `costruttori`: creano un selettore senza renderizzarlo, fa eccezione il selettore custom, in cui si può scegliere se renderizzare o meno
-- `render`: renderizza automaticamente la schermata, restituendo l'intero corrispondente all'indice dell'opzione selezionata nel vettore che è stato dato al costruttore
+- `render`: renderizza automaticamente la schermata, restituendo l'intero corrispondente all'indice dell'opzione selezionata nel vettore che è stato dato al costruttore.
+La funzione permette di scegliere se si desidera aggiungere un bordo alla schermata
 
 #### Funzioni specifiche:
 Selettore custom
 - `getResult`: restituisce il carattere associato al risultato
 
+#### Meccaniche speciali:
+- La schermata questionario ha un funzionamento particolare: a rappresentare
+le varie opzioni ci sono oggetti chiamati `formElement`, che contengono tutti
+i dati che possono servire, nel formato
+  - `titolo`: l'intestazione dell'opzione
+  - `questionType`: accetta un intero o un `questionTypes`, e rappresenta
+il tipo di elemento
+  - `size`: serve solo se questionType è `SCALA` e dichiara la dimensione
+dell'elemento
+  - `outInt`: accetta una variabile `int` e la modifica: per i booleani sarà
+0 oppure 1, e per le scale rappresenterà l'indice (a partire da 0)
+dell'elemento selezionato
+  - `outString`: accetta una variabile `string` e la modifica: essa assumerà
+il valore in ingresso di un elemento di inserimento
+
 ## Installazione
-Il pacchetto si può trovare su https://www.nuget.org/packages/Simple_CLI#readme-body-tab.
+Il pacchetto si può trovare su https://www.nuget.org/packages/Simple_CLI.
 Installazione con .NET:
 ``` DOTNET
-dotnet add package Simple_CLI --version 1.4.2
+dotnet add package Simple_CLI --version 1.5.0
 ```
 Installazione con PMC
 ``` PMC
-NuGet\Install-Package Simple_CLI -Version 1.4.2
+NuGet\Install-Package Simple_CLI -Version 1.5.0
 ```

@@ -58,6 +58,44 @@ void remShift(int& shift, const int selezionato) {
     shift--;
 }
 
+string aggiungiBordi(const string& contenuto, const char WallHorizontal = '-', const char WallVertical = '|',
+    const int paddingHorizontal = 0, const int paddingVertical = 0) {
+    vector<string> righe;
+
+    // creazione del vettore
+    string temp;
+    for (const char c : contenuto) {
+        if (c == '\n') {
+            righe.emplace_back(temp);
+            temp = "";
+        }
+        else temp += c;
+    }
+    if (!temp.empty()) righe.emplace_back(temp);
+
+    // Cerca la dimensione massima
+    int maxSize = 0;
+    for (string &s : righe)
+        maxSize = max(maxSize, static_cast<int>(s.length()));
+
+    string out;
+
+    //  Riga superiore
+    out += ripeti(maxSize + 2 + 2 * paddingHorizontal, {WallHorizontal}) + '\n';
+    out += ripeti(paddingVertical, (WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical) + '\n');
+
+    // Contenuto
+    for (const string& s : righe) {
+        out += WallVertical +
+            ripeti(paddingHorizontal, " ") + s + (ripeti(static_cast<int>(maxSize - s.length()), " ") + ripeti(paddingHorizontal, " ")
+            + WallVertical + '\n');
+    }
+
+    // Riga inferiore
+    out += ripeti(paddingVertical, (WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical) + '\n');
+    return out + ripeti(maxSize + 2, {WallHorizontal}) + '\n';
+}
+
 
 /*
  *   ========================================
@@ -65,59 +103,20 @@ void remShift(int& shift, const int selezionato) {
  *   ========================================
  */
 
-// Costruttori (creano una schermata con i bordi) - una riga per stringa del vettore
-Schermata::Schermata(const vector<string>& contenuto) {
+// Costruttori - una stringa unica con righe separate da '/n'
+Schermata::Schermata(string& contenuto, const bool bordi) {
+    hasBordi = bordi;
     // Richiama la funziona aggiorna
-    aggiorna(contenuto);
-}
-// Costruttori (creano una schermata con i bordi) - una stringa unica con righe separate da '/n'
-Schermata::Schermata(const string &contenuto) {
-    // Richiama la funziona aggiorna
-    aggiorna(contenuto);
+    aggiorna(contenuto, bordi);
 }
 
-// Aggiornamento (rinnovano una schermata con i bordi) - una riga per stringa del vettore
-void Schermata::aggiorna(const vector<string> &obj) {
-    string out;
-
-    // Calcola la lunghezza dell'elemento più lungo
-    int max_s;
-    for (const string& s : obj)
-        max_s = max(max_s, static_cast<int>(s.length()));
-
-    //  Aggiungi la parete superiore
-    out += ripeti(static_cast<int>(max_s + 2), &printables[WALL_HORIZONTAL]) + '\n';
-    for (const string & s : obj) {
-        // Aggiungi la parete sinistra
-        out += printables[WALL_VERTICAL];
-        // Aggiungi il contenuto
-        out += s;
-        // Aggiungi il padding per raggiungere la lunghezza massima
-        out += ripeti(static_cast<int>(max_s - s.length()), " ");
-        // Aggiungi la parete destra e vai a capo
-        out += printables[WALL_VERTICAL];
-        out += '\n';
-    }
-    // Aggiungi la parete inferiore
-    out += ripeti(static_cast<int>(max_s + 2), &printables[WALL_HORIZONTAL]);
-    out += '\n';
-    contenuto = out;
-}
-// Aggiornamento (rinnovano una schermata con i bordi) - una stringa unica con righe separate da '/n'
-void Schermata::aggiorna(const string &obj) {
-    // Trasforma in vettore
-    vector<string> divided;
-    string temp;
-    for (const char i : obj) {
-        if (i == '\n') {
-            divided.push_back(temp);
-            continue;
-        }
-        temp += i;
-    }
-
-    // Aggiorna con il protocollo standard
-    aggiorna(divided);
+// Aggiornamento - una stringa unica con righe separate da '/n'
+void Schermata::aggiorna(string &obj, const bool bordi) {
+    hasBordi = bordi;
+    contenuto = bordi ?
+        aggiungiBordi(obj, printables[WALL_HORIZONTAL], printables[WALL_VERTICAL],
+            paddingHorizontal, paddingVertical) :
+        obj;
 }
 
 // Stampa a schermo della schermata - cancella lo schermo prima se si imposta del su true
@@ -127,8 +126,8 @@ void Schermata::print(const bool del) const {
 }
 
 // Imposta il contenuto (senza bordi)
-void Schermata::setContenuto(const string &cont) {
-    contenuto = cont;
+void Schermata::setContenuto(string& cont, const bool bordi) {
+    aggiorna(cont, bordi);
 }
 
 // Leggi il contenuto
@@ -143,11 +142,11 @@ string Schermata::getContenuto() {
  */
 
 // Crea una schermata selettore standard, ma non la renderizza
-SchermataSelettore::SchermataSelettore(string  titolo, const vector<string>& opzioni) :
+SchermataSelettore::SchermataSelettore(string  titolo, const vector<string>& opzioni, const bool bordi) :
     Schermata(),
     titolo(std::move(titolo)),
     opzioni(opzioni)
-    {}
+    {this->hasBordi =bordi;}
 
 // Aggiorna la schermata
 void SchermataSelettore::calculate() {
@@ -161,7 +160,7 @@ void SchermataSelettore::calculate() {
         sel = (i == selezionato ? printables[SELECTOR] : printables[UNSELECTED]);
         out += sel + " " + opzioni[i] + '\n';
     }
-    setContenuto(out);
+    setContenuto(out, hasBordi);
     print(true);
 }
 
@@ -205,12 +204,13 @@ int SchermataSelettore::render() {
 
 // Crea una schermata selettore custom e renderizza automaticamente il contenuto - impostare autoRender su true per renderizzare subito
 SchermataSelettoreCustom::SchermataSelettoreCustom(string titolo, const vector<char>& titoliOpzioni,
-    const vector<string>& opzioni, const bool autoRender) :
+    const vector<string>& opzioni, const bool autoRender, const bool bordi) :
     titolo(std::move(titolo)), opzioni(opzioni), titoliOpzioni(titoliOpzioni) {
     if (titoliOpzioni.size() != opzioni.size())
         throw length_error("Lunghezze inconsistenti tra titoliOpzioni ed opzioni");
     // Renderizza la schermata se richiesto
-   if (autoRender) render();
+    this->hasBordi = bordi;
+    if (autoRender) render();
 }
 
 void SchermataSelettoreCustom::calculate() {
@@ -226,7 +226,7 @@ void SchermataSelettoreCustom::calculate() {
         out += sel + ": " + opzioni[i] + '\n';
     }
     // Imposta il contenuto
-    setContenuto(out);
+    setContenuto(out, hasBordi);
 }
 
 // Renderizza la schermata, restituisce l'indice del risultato
@@ -259,8 +259,9 @@ char SchermataSelettoreCustom::getResult() const { return titoliOpzioni[result];
 */
 
 // Crea una schermata selettore large senza renderizzarla
-SchermataSelettoreLarge::SchermataSelettoreLarge(string titolo, const vector<string> &opzioni, const int size = 9) :
+SchermataSelettoreLarge::SchermataSelettoreLarge(string titolo, const vector<string> &opzioni, const int size = 9, bool bordi) :
     SchermataSelettore(std::move(titolo), opzioni) {
+    this->hasBordi = bordi;
     this->size = size > 2 ? size : 3;
     if (opzioni.size() > size) trueLarge = true;
     else trueLarge = false;
@@ -288,7 +289,7 @@ void SchermataSelettoreLarge::calculate() {
     out += selUpDown;
 
     // Imposta il contenuto
-    setContenuto(out);
+    setContenuto(out, hasBordi);
 }
 
 // Renderizza la schermata restituendo l'indice della selezione
@@ -335,8 +336,8 @@ int SchermataSelettoreLarge::render() {
 */
 
 // Crea una schermata selettore filtrata secondo le regole di schermata selettore
-SchermataSelettoreFiltrata::SchermataSelettoreFiltrata(string titolo, const vector<string> &opzioni, const int size) :
-    SchermataSelettoreLarge(std::move(titolo), opzioni, size) {}
+SchermataSelettoreFiltrata::SchermataSelettoreFiltrata(string titolo, const vector<string> &opzioni, const int size, const bool bordi) :
+    SchermataSelettoreLarge(std::move(titolo), opzioni, size, bordi) {}
 
 // Applica i filtri
 void SchermataSelettoreFiltrata::calculateNewSet() {
@@ -372,7 +373,7 @@ void SchermataSelettoreFiltrata::calculate() {
     out += selUpDown;
 
     // Imposta il contenuto
-    setContenuto(out);
+    setContenuto(out, hasBordi);
 }
 
 // Renderizza la schermata restituendo l'indice della selezione
@@ -426,6 +427,108 @@ int SchermataSelettoreFiltrata::render() {
                     cambioFiltro = true;
                 }
                 break;
+        }
+    }
+}
+
+
+/*
+ *   ===========================================
+ *   ========== SCHERMATA QUESTIONARIO =========
+ *   ===========================================
+*/
+
+SchermataQuestionario::SchermataQuestionario(string  titolo, vector<formElement> opzioni) :
+    Schermata(), opzioni(std::move(opzioni)), titolo(std::move(titolo)) {}
+
+void SchermataQuestionario::calculate() {
+    string out;
+
+    // Aggiungi il titolo
+    out += titolo + '\n';
+
+    // Aggiungi tutte le opzioni
+    for (int i = 0; i < opzioni.size(); i++) {
+        // Aggiungi il titolo dell'opzione
+        out += printables[i == selezionato ? SELECTOR : UNSELECTED];
+        out += " " + opzioni[i].titolo + " ";
+
+        // Aggiungi il corpo
+        switch (opzioni[i].questionType) {
+            case INSERIMENTO:
+                out += opzioni[i].outString + "\n";
+                break;
+            case BOOLEANO:
+                out += printables[CONTAIN_LEFT];
+                out += opzioni[i].outInt == 1 ? printables[CHECKED] : printables[UNCHECKED];
+                out += printables[CONTAIN_RIGHT];
+                break;
+            case SCALA: {
+                out += '\n';
+                out += printables[CONTAIN_LEFT];
+                for (int s = 0; s < opzioni[i].size; s++) {
+                    out += printables[s == opzioni[i].outInt ? CHECKED : UNSELECTED];
+                }
+                out += printables[CONTAIN_RIGHT];
+                break;
+            }
+        }
+
+        // Aggiungi lo spazio sotto
+        out += "\n\n";
+
+        // Imposta il contenuto
+        setContenuto(out, hasBordi);
+    }
+}
+
+void SchermataQuestionario::render() {
+    selezionato = 0;
+
+    while (true) {
+        calculate();
+        print(true);
+
+        switch (const char in = static_cast<char>(_getch())) {
+            case 3:
+                exit(0);
+            case 27:
+                return;
+            case 72:
+                remSelezionato(selezionato);
+                break;
+            case 80:
+                addSelezionato(selezionato, static_cast<int>(opzioni.size()));
+                break;
+            case '\r':
+                return;
+            default: {
+                switch (opzioni[selezionato].questionType) {
+                    case INSERIMENTO:
+                        if (in == '\b') {
+                            if (!opzioni[selezionato].outString.empty()) opzioni[selezionato].outString.pop_back();
+                            calculate();
+                            print(true);
+                        }
+                        else if (in == 127)
+                            opzioni[selezionato].outString = "";
+                        else opzioni[selezionato].outString += in;
+
+                        break;
+                    case BOOLEANO:
+                        if (in == ' ')
+                            opzioni[selezionato].outInt = 1 - opzioni[selezionato].outInt;
+                        break;
+                    case SCALA:
+                        if ((in == '+' || in == 77) && opzioni[selezionato].outInt < opzioni[selezionato].size - 1)
+                            opzioni[selezionato].outInt++;
+                        if ((in == '-' || in == 75) && opzioni[selezionato].outInt > 0)
+                            opzioni[selezionato].outInt--;
+                        break;
+                    default:
+                        ;
+                }
+            }
         }
     }
 }
