@@ -38,9 +38,8 @@ enum Key { UP = 256, DOWN, LEFT, RIGHT, ENTER, ESC, BACKSPACE, DEL, CTRLC };
 #define SETUP /* Non necessario */
 #endif
 
-using namespace std;
-
 namespace schermate {
+    using namespace std;
     inline unsigned int righeStampate = 0;
     enum PrintableTypes {
         WALL_HORIZONTAL,

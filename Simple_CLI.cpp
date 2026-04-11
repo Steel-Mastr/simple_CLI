@@ -8,6 +8,7 @@
 #define DELETE_LOWER    "\033[J"
 
 using namespace schermate;
+using namespace std;
 
 
 /*
@@ -106,9 +107,10 @@ void schermate::println(const string& contenuto) {
         if (c == '\n') righeStampate++;
 }
 // Cancella n righe
-void schermate::del(unsigned int count) {
-    if (righeStampate > 0) [[likely]]
-        cout << CURSOR_UP(min(righeStampate, count)) << '\r' << DELETE_LOWER << flush;
+void schermate::del(const unsigned int count) {
+    if (righeStampate <= 0 || count == 0) [[unlikely]]
+        return;
+    cout << CURSOR_UP(min(righeStampate, count)) << '\r' << DELETE_LOWER << flush;
     righeStampate = max(0, static_cast<int>(righeStampate) - static_cast<int>(count));
 }
 // Cancella tutto
