@@ -4,9 +4,44 @@
 #include <vector>
 #include <unordered_map>
 
+#ifdef _WIN32
+    #include <conio.h>
+    #define GETCH() _getch()
+#else
+    #include <termios.h>
+    #include <unistd.h>
+
+    termios _originalTermios;
+
+void enableRawMode() {
+    tcgetattr(STDIN_FILENO, &_originalTermios);
+    termios raw = _originalTermios;
+    raw.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+    atexit([]() {
+        tcsetattr(STDIN_FILENO, TCSANOW, &_originalTermios);
+    });
+}
+
+char _getch_unix() {
+    return static_cast<char>(getchar());
+}
+
+#define GETCH() _getch_unix()
+#endif
+
+enum Key { UP = 256, DOWN, LEFT, RIGHT, ENTER, ESC, BACKSPACE, DEL, CTRLC };
+
+#ifndef _WIN32
+#define SETUP  enableRawMode()
+#else
+#define SETUP /* Non necessario */
+#endif
+
 using namespace std;
 
 namespace schermate {
+    inline unsigned int righeStampate = 0;
     enum PrintableTypes {
         WALL_HORIZONTAL,
         WALL_VERTICAL,
@@ -26,6 +61,37 @@ namespace schermate {
         CONTAIN_LEFT,
         CONTAIN_RIGHT
     };
+
+    unsigned int getMaxSize(const vector<string>&);
+    vector<string> parseStringVector(const string&);
+    void print(const string& contenuto);
+    void println(const string& contenuto);
+    void del(unsigned int count);
+    void clear();
+
+    struct Content {
+        vector<string> data = {};
+        unsigned int maxSize = 0;
+
+        explicit Content(const vector<string>& contenuto) : data(contenuto) {
+            maxSize = getMaxSize(contenuto);
+        }
+        explicit Content(const string& s) : data(parseStringVector(s)) {
+            maxSize = getMaxSize(data);
+        }
+        Content(const vector<string>& data, const unsigned int maxSize) : data(data), maxSize(maxSize) {}
+
+        Content& operator += (const vector<string>& toAdd) {
+            data.insert(data.end(), toAdd.begin(), toAdd.end());
+            maxSize = max(maxSize, getMaxSize(toAdd));
+            return *this;
+        }
+        Content& operator += (const string& toAdd) {
+            data.emplace_back(toAdd);
+            maxSize = max(maxSize, static_cast<unsigned int>(toAdd.length()));
+            return *this;
+        }
+    };
     //      -----{ GENERICO }-----
 
     /*  La classe Schermata serve per funzioni generiche: da sola rappresenta del contenuto
@@ -33,7 +99,7 @@ namespace schermate {
      */
     class Schermata {
     protected:
-        string contenuto;
+        Content contenuto = {vector<string>{}, 0};
         bool hasBordi = false;
     public:
         int paddingHorizontal = 0;
@@ -59,14 +125,23 @@ namespace schermate {
             {CONTAIN_RIGHT, ']'}
         };
 
-        explicit Schermata(string& contenuto, bool bordi);
+        explicit Schermata(const string& contenuto, bool bordi);
         explicit Schermata() = default;
-        void aggiorna(string& obj, bool bordi);
+        void aggiorna(const string &obj, bool bordi);
+
+        void aggiorna(const vector<string> &obj, bool bordi);
 
         ~Schermata() = default;
         void print(bool del = false) const;
-        void setContenuto(string& cont, bool bordi);
-        string getContenuto();
+
+        void setContenuto(const string &cont, bool bordi);
+        void setContenuto(const vector<string> &cont, bool bordi);
+
+        void setContenuto();
+
+        const Content& getContenuto() const;
+
+        [[nodiscard]] string getString() const;
     };
 
     //      -----{ SELETTORI }-----
@@ -161,7 +236,7 @@ namespace schermate {
         int selezionato = 0;
     public:
         SchermataQuestionario(string  titolo, vector<formElement> opzioni);
-        SchermataQuestionario() = default;
+        SchermataQuestionario() = delete;
         ~SchermataQuestionario() = default;
 
         void render();

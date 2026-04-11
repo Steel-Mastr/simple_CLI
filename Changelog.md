@@ -2,7 +2,22 @@
 
 ---
 
-## *> Versione 1.5 (major):*
+## *> Versione 1.6.0 (major):*
+
+Sono stati risolti problemi di compatibilità con Linux (supporto Unix/Linux/macOS)
+Il rendering ora ha risolto il problema del jittering ed è diventato più efficiente
+
+##### Aggiunte:
+- Funzioni di output `print`, `println`, `clear`, `del` nel namespace `schermate`, 
+da sostituirsi a clear() e cout
+
+##### Patch:
+- Corretti crash su lista filtrata vuota
+- Ottimizzazioni: `reserve`, `getMaxSize` fuori dai loop, `clear()` invece di `= {}`
+
+---
+
+## - Versione 1.5 (major):
 La versione introduce un miglioramento generico di performance e porta
 l'aggiunta di varie nuove features.
 
@@ -34,7 +49,8 @@ lo carica sulla variabile `string contenuto` della classe genitrice `Schermata`
 La leggibilità del codice è migliorata concentrandosi sulla cancellazione
 del codice ripetuto e sull'aggiunta di commenti
 
----
+<!-------------------------------------------------------------->
+
 ## - Versione 1.4 (major):
 Ѐ aggiunta la schermata selettore filtrata ed il codice è stato migliorato
 in leggibilità
@@ -46,6 +62,7 @@ in leggibilità
 
 ## - Versione 1.3 (major):
 Ѐ aggiunta la schermata selettore large e migliorato il codice
+
 ##### Aggiunte:
 - Schermata selettore large
 

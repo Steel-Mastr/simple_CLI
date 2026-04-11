@@ -1,12 +1,11 @@
 #include "Simple_CLI.h"
 #include <utility>
-#include <conio.h>
 
-#ifdef _WIN32
-#define CLEAN system("cls")
-#else
-#define CLEAN system("clear")
-#endif
+#define CURSOR_UP(n)    "\033[" + to_string(n) + "A"
+#define CURSOR_DOWN(n)  "\033[" + to_string(n) + "B"
+#define CLEAR_LINE      "\033[2K"
+#define DELETE_LINE     "\033[M"
+#define DELETE_LOWER    "\033[J"
 
 using namespace schermate;
 
@@ -17,9 +16,44 @@ using namespace schermate;
  *   ==============================
  */
 
+int readKey() {
+    const int c = GETCH();
+#ifdef _WIN32
+    if (c == 224 || c == 0) {
+        switch (GETCH()) {
+            case 72: return UP;
+            case 80: return DOWN;
+            case 75: return LEFT;
+            case 77: return RIGHT;
+            default:
+                return c;
+        }
+    }
+#else
+    if (c == 27) {
+        const int c2 = GETCH();
+        if (c2 == '[') {
+            switch (GETCH()) {
+                case 'A': return UP;
+                case 'B': return DOWN;
+                case 'C': return RIGHT;
+                case 'D': return LEFT;
+            }
+        }
+        return ESC;
+    }
+#endif
+    if (c == '\r' || c == '\n') return ENTER;
+    if (c == 3)   return CTRLC;
+    if (c == 27)  return ESC;
+    if (c == 8 || c == 127) return BACKSPACE;
+    return c;
+}
+
 // Gestisce il rendering ripetuto di una stessa stringa
 string ripeti(const int rep, const string& s) {
     string out;
+    out.reserve(s.size() * rep);
     for (int i = 0; i < rep; i++)
         out += s;
     return out;
@@ -34,66 +68,127 @@ string toLower(const string& s) {
 }
 
 // Nelle schermate di selezione sostituisce selezionato++
-void addSelezionato(int& selezionato, const int size) {
+inline void addSelezionato(int& selezionato, const int size) {
     if (selezionato >= size - 1) return;
     selezionato++;
 }
 
 // Nelle schermate di selezione sostituisce selezionato--
-void remSelezionato(int& selezionato) {
+inline void remSelezionato(int& selezionato) {
     if (selezionato <= 0) return;
     selezionato--;
 }
 
 // Nelle schermate a scorrimento sostituisce shift++
-void addShift(int& shift, const int selezionato, const int size, const int listSize) {
+inline void addShift(int& shift, const int selezionato, const int size, const int listSize) {
     if (shift + size > listSize) return;        //  outOfList
     if (selezionato <= shift + 1) return;       //  notToMove
     shift++;
 }
 
 // Nelle schermate a scorrimento sostituisce shift--
-void remShift(int& shift, const int selezionato) {
+inline void remShift(int& shift, const int selezionato) {
     if (selezionato >= shift + 1) return;       //  notToMove
     shift--;
 }
 
-string aggiungiBordi(const string& contenuto, const char WallHorizontal = '-', const char WallVertical = '|',
-    const int paddingHorizontal = 0, const int paddingVertical = 0) {
-    vector<string> righe;
+// Si sostituisce a cout
+void schermate::print(const string& contenuto) {
+    cout << contenuto << flush;
+    for (const char& c : contenuto)
+        if (c == '\n') righeStampate++;
+}
+// Si sostituisce a cout
+void schermate::println(const string& contenuto) {
+    cout << '\n' << contenuto << flush;
+    righeStampate++;
+    for (const char& c : contenuto)
+        if (c == '\n') righeStampate++;
+}
+// Cancella n righe
+void schermate::del(unsigned int count) {
+    if (righeStampate > 0) [[likely]]
+        cout << CURSOR_UP(min(righeStampate, count)) << '\r' << DELETE_LOWER << flush;
+    righeStampate = max(0, static_cast<int>(righeStampate) - static_cast<int>(count));
+}
+// Cancella tutto
+void schermate::clear() {
+    if (righeStampate > 0) [[likely]]
+        cout << CURSOR_UP(righeStampate) << '\r' << DELETE_LOWER << flush;
+    righeStampate = 0;
+}
 
-    // creazione del vettore
-    string temp;
-    for (const char c : contenuto) {
-        if (c == '\n') {
-            righe.emplace_back(temp);
-            temp = "";
-        }
-        else temp += c;
-    }
-    if (!temp.empty()) righe.emplace_back(temp);
 
-    // Cerca la dimensione massima
-    int maxSize = 0;
-    for (string &s : righe)
-        maxSize = max(maxSize, static_cast<int>(s.length()));
 
+// Trasforma un vettore di stringhe in una singola stringa con /n
+string parseString(const vector<string>& contenuto) {
     string out;
+    unsigned int total = 0;
+    for (const string& s : contenuto)
+        total += s.length() + 1;
+    out.reserve(total);
+    for (const string& s : contenuto)
+        out += s + '\n';
+    return out;
+}
 
+// Trasforma una stringa in un vettore
+vector<string> schermate::parseStringVector(const string& stringa) {
+    vector<string> out;
+    string current;
+    for (const char& c : stringa) {
+        if (c != '\n') {
+            current += c;
+            continue;
+        }
+        out.emplace_back(current);
+        current.clear();
+    }
+    if (!current.empty())
+        out.emplace_back(current);
+    return out;
+}
+
+// Massima dimensione del vettore
+unsigned int schermate::getMaxSize(const vector<string>& contenuto) {
+    unsigned int maxSize = 0;
+    for (const string& s : contenuto)
+        maxSize = max(maxSize, static_cast<unsigned int>(s.length()));
+    return maxSize;
+}
+
+vector<string> aggiungiBordi(
+    const Content& contenuto,
+    const char WallHorizontal = '-', const char WallVertical = '|',
+    const int paddingHorizontal = 0, const int paddingVertical = 0) {
+    vector<string> out;
+    out.reserve(contenuto.data.size() + 2 * paddingVertical + 2);
     //  Riga superiore
-    out += ripeti(maxSize + 2 + 2 * paddingHorizontal, {WallHorizontal}) + '\n';
-    out += ripeti(paddingVertical, (WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical) + '\n');
+    out.emplace_back(ripeti(contenuto.maxSize + 2 + 2 * paddingHorizontal, {WallHorizontal}));
+    // Righe di padding verticale
+    out.emplace_back(ripeti(paddingVertical, (WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical)));
 
     // Contenuto
-    for (const string& s : righe) {
-        out += WallVertical +
-            ripeti(paddingHorizontal, " ") + s + (ripeti(static_cast<int>(maxSize - s.length()), " ") + ripeti(paddingHorizontal, " ")
-            + WallVertical + '\n');
+    for (const string& s : contenuto.data) {
+        out.emplace_back(
+            // Muro e padding
+            WallVertical
+            + ripeti(paddingHorizontal, " ")
+            // Contenuto e filler alla fine
+            + s
+            + (ripeti(static_cast<int>(contenuto.maxSize - s.length()), " ")
+            // Padding e muro
+            + ripeti(paddingHorizontal, " ")
+            + WallVertical)
+        );
     }
 
-    // Riga inferiore
-    out += ripeti(paddingVertical, (WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical) + '\n');
-    return out + ripeti(maxSize + 2, {WallHorizontal}) + '\n';
+    // Padding verticale e riga inferiore
+    out.emplace_back(
+        ripeti(paddingVertical,
+            WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical));
+    out.emplace_back(ripeti(contenuto.maxSize + 2, {WallHorizontal}));
+    return out;
 }
 
 
@@ -104,35 +199,82 @@ string aggiungiBordi(const string& contenuto, const char WallHorizontal = '-', c
  */
 
 // Costruttori - una stringa unica con righe separate da '/n'
-Schermata::Schermata(string& contenuto, const bool bordi) {
-    hasBordi = bordi;
+Schermata::Schermata(const string& contenuto, const bool bordi) {
     // Richiama la funziona aggiorna
     aggiorna(contenuto, bordi);
 }
 
 // Aggiornamento - una stringa unica con righe separate da '/n'
-void Schermata::aggiorna(string &obj, const bool bordi) {
+void Schermata::aggiorna(const string& obj, const bool bordi) {
     hasBordi = bordi;
-    contenuto = bordi ?
-        aggiungiBordi(obj, printables[WALL_HORIZONTAL], printables[WALL_VERTICAL],
-            paddingHorizontal, paddingVertical) :
-        obj;
+    contenuto = Content(parseStringVector(obj));
+    if (!bordi)
+        return;
+
+    contenuto.data = aggiungiBordi(contenuto,
+        printables[WALL_HORIZONTAL],
+        printables[WALL_VERTICAL], paddingHorizontal, paddingVertical);
+    contenuto.maxSize += 2 * paddingHorizontal + 2;
 }
 
+// Aggiornamento - vettore di stringhe
+void Schermata::aggiorna(const vector<string>& obj, const bool bordi) {
+    contenuto = Content(obj);
+    hasBordi = bordi;
+    if (!bordi)
+        return;
+    contenuto.data = aggiungiBordi(
+        contenuto,
+        printables[WALL_HORIZONTAL],
+        printables[WALL_VERTICAL],
+        paddingHorizontal,
+        paddingVertical
+        );
+    contenuto.maxSize += 2 * paddingHorizontal + 2;
+}
 // Stampa a schermo della schermata - cancella lo schermo prima se si imposta del su true
 void Schermata::print(const bool del) const {
-    if (del) CLEAN;
-    cout << contenuto << endl;
+
+    if (!del) [[unlikely]] {
+        for (const string& s : contenuto.data) {
+            cout << s << '\n';
+        }
+        righeStampate += contenuto.data.size();
+        cout << flush;
+        return;
+    }
+    clear();
+    for (const string& s : contenuto.data) {
+        cout << s << '\n';
+    }
+    righeStampate = contenuto.data.size();
+    cout << flush;
 }
 
-// Imposta il contenuto (senza bordi)
-void Schermata::setContenuto(string& cont, const bool bordi) {
+// Imposta il contenuto
+void Schermata::setContenuto(const string& cont, const bool bordi = false) {
     aggiorna(cont, bordi);
+}
+// Imposta il contenuto
+void Schermata::setContenuto(const vector<string>& cont, const bool bordi = false) {
+    aggiorna(cont, bordi);
+}
+// Imposta il contenuto automaticamente
+void Schermata::setContenuto() {
+    if (hasBordi)
+        contenuto = {
+        aggiungiBordi(contenuto),
+        contenuto.maxSize + 2 * paddingHorizontal + 2
+    };
 }
 
 // Leggi il contenuto
-string Schermata::getContenuto() {
+const Content& Schermata::getContenuto() const {
     return contenuto;
+}
+// Leggi il contenuto sotto forma di stringa
+[[nodiscard]] string Schermata::getString() const {
+    return parseString(contenuto.data);
 }
 
 /*
@@ -142,25 +284,30 @@ string Schermata::getContenuto() {
  */
 
 // Crea una schermata selettore standard, ma non la renderizza
-SchermataSelettore::SchermataSelettore(string  titolo, const vector<string>& opzioni, const bool bordi) :
+SchermataSelettore::SchermataSelettore(string titolo, const vector<string>& opzioni, const bool bordi) :
     Schermata(),
     titolo(std::move(titolo)),
     opzioni(opzioni)
-    {this->hasBordi =bordi;}
+    {this->hasBordi = bordi;}
 
 // Aggiorna la schermata
 void SchermataSelettore::calculate() {
-    string out;
+    const vector<string> titoloParsed = parseStringVector(titolo);
     // Intestazione con il titolo
-    out += titolo + '\n';
+    contenuto = Content(titoloParsed);
+    contenuto.data.reserve(2 * paddingVertical + hasBordi * 2 + titoloParsed.size() + opzioni.size());
 
     // Aggiungi tutti gli elementi della lista
     string sel;
     for (int i = 0; i < opzioni.size(); i++) {
-        sel = (i == selezionato ? printables[SELECTOR] : printables[UNSELECTED]);
-        out += sel + " " + opzioni[i] + '\n';
+        if (i == selezionato) [[unlikely]]
+            sel = printables[SELECTOR];
+        else
+            sel = printables[UNSELECTED];
+        contenuto.data.emplace_back(sel + " " + opzioni[i]);
     }
-    setContenuto(out, hasBordi);
+    contenuto.maxSize = getMaxSize(contenuto.data);
+    setContenuto();
     print(true);
 }
 
@@ -170,24 +317,22 @@ int SchermataSelettore::render() {
     while (true) {
         // Stampa la schermata
         calculate();
-        print(true);
 
-        // Leggi l'imput
-        switch (_getch()) {
-            case 3:
+        // Leggi l'ingresso
+        switch (readKey()) {
+            case CTRLC:
                 exit(0);
-            case 27:
+            case ESC:
                 return -1;
             case 'w':
-            case 72:
+            case UP:
                 remSelezionato(selezionato);
                 break;
             case 's':
-            case 80:
+            case DOWN:
                 addSelezionato(selezionato, static_cast<int>(opzioni.size()));
                 break;
-            case '\r':
-                CLEAN;
+            case ENTER:
                 return selezionato;
             default:
                 ;
@@ -214,19 +359,18 @@ SchermataSelettoreCustom::SchermataSelettoreCustom(string titolo, const vector<c
 }
 
 void SchermataSelettoreCustom::calculate() {
-    string out;
-
     // Intestazione con il titolo
-    out += titolo + '\n';
+    contenuto = Content(titolo);
 
     // Aggiungi tutte le opzioni
     string sel;
     for (int i = 0; i < titoliOpzioni.size(); i++) {
         sel = titoliOpzioni[i];
-        out += sel + ": " + opzioni[i] + '\n';
+        contenuto.data.emplace_back(sel + ": " + opzioni[i]);
     }
+    contenuto.maxSize = getMaxSize(contenuto.data);
     // Imposta il contenuto
-    setContenuto(out, hasBordi);
+    setContenuto();
 }
 
 // Renderizza la schermata, restituisce l'indice del risultato
@@ -236,13 +380,12 @@ int SchermataSelettoreCustom::render() {
     print(true);
 
     // Cerca il valore inserito
-    const char input = static_cast<char>(_getch());
-    if (input == 3) exit(0);
-    if (input == 27) return -1;
+    const int input = readKey();
+    if (input == CTRLC) exit(0);
+    if (input == ESC) return -1;
     for (int i = 0; i < titoliOpzioni.size(); i++)
         if (input == titoliOpzioni[i]) {
             result = i;
-            CLEAN;
             return i;
         }
     return -1;
@@ -269,27 +412,36 @@ SchermataSelettoreLarge::SchermataSelettoreLarge(string titolo, const vector<str
 
 // Aggiorna la schermata
 void SchermataSelettoreLarge::calculate() {
-    string out;
     // Intestazione con il titolo
-    out += titolo + '\n';
-    if (shift < 0) shift = 0;
-    // Se necessaria, aggiungi ARROW_UP
-    string selUpDown;
-    selUpDown = (shift > 0) ? printables[ARROW_UP] : ' ';
-    out += selUpDown + '\n';
+    contenuto = Content(titolo);
+    contenuto.data.reserve(contenuto.data.size() + size
+        + hasBordi * 2 * (paddingVertical + 1));
+    shift = max(shift, 0);
+    if (shift > 0) [[likely]] {
+        string toAdd;
+        toAdd += printables[ARROW_UP];
+        contenuto.data.emplace_back(toAdd);
+    }
     // Aggiungi tutte le opzioni
     string sel;
     for (int i = shift; (i < shift + size) && (i < opzioni.size()); i++) {
-        sel = ((selezionato == i) ? printables[SELECTOR] : printables[UNSELECTED]);
-        out += sel + " " + opzioni[i] + '\n';
+        if (selezionato == i) [[unlikely]]
+            sel = printables[SELECTOR];
+        else
+            sel = printables[UNSELECTED];
+        contenuto.data.emplace_back(sel + " " + opzioni[i]);
     }
 
     // Se necessaria, aggiungi ARROW_DOWN
-    selUpDown = (shift < opzioni.size() - size) ? printables[ARROW_DOWN] : ' ';
-    out += selUpDown;
-
+    if (static_cast<int>(shift) < opzioni.size() - size) {
+        string toAdd;
+        toAdd += printables[ARROW_DOWN];
+        contenuto.data.emplace_back(toAdd);
+    }
+    contenuto.maxSize = getMaxSize(contenuto.data);
     // Imposta il contenuto
-    setContenuto(out, hasBordi);
+    setContenuto();
+    print(true);
 }
 
 // Renderizza la schermata restituendo l'indice della selezione
@@ -299,28 +451,26 @@ int SchermataSelettoreLarge::render() {
     while (true) {
         // Stampa la schermata
         calculate();
-        print(true);
 
         // Leggi l'input
-        switch (_getch()) {
-            case 3:
+        switch (readKey()) {
+            case CTRLC:
                 exit(0);
-            case 27:
+            case ESC:
                 return -1;
             case 'w':
-            case 72:
+            case UP:
                 remSelezionato(selezionato);
 
                 remShift(shift, selezionato);
                 break;
             case 's':
-            case 80:
+            case DOWN:
                 addSelezionato(selezionato, static_cast<int>(opzioni.size()));
 
                 addShift(shift, selezionato, size, static_cast<int>(opzioni.size()));
                 break;
-            case '\r':
-                CLEAN;
+            case ENTER:
                 return selezionato;
             default:
                 ;
@@ -341,39 +491,48 @@ SchermataSelettoreFiltrata::SchermataSelettoreFiltrata(string titolo, const vect
 
 // Applica i filtri
 void SchermataSelettoreFiltrata::calculateNewSet() {
-    opzioniFiltrate = {};
+    opzioniFiltrate.clear();
+    const string filtroLower = toLower(filtro);
     for (const string& s : opzioni)
-        if (toLower(s).find(toLower(filtro)) != string::npos)
+        if (toLower(s).find(filtroLower) != string::npos)
             opzioniFiltrate.emplace_back(s);
 }
 
 // Aggiorna la schermata
 void SchermataSelettoreFiltrata::calculate() {
-    string out;
-
     // Intestazione con titolo e filtro
-    out += titolo + '\n';
-    out += filtro + '\n';
+    contenuto = Content(titolo + '\n' + filtro);
+    contenuto.data.reserve(contenuto.data.size() + size);
 
     // Se necessaria, aggiungi ARROW_UP
     if (shift < 0) shift = 0;
-    string selUpDown;
-    selUpDown = (shift > 0) ? printables[ARROW_UP] : ' ';
-    out += selUpDown + '\n';
+    if (shift > 0) [[likely]] {
+        string selUpDown;
+        selUpDown = printables[ARROW_UP];
+        contenuto.data.emplace_back(selUpDown);
+    }
 
     // Aggiungi tutte le opzioni (filtrate)
     string sel;
-    for (int i = 0; i < opzioniFiltrate.size(); i++) {
-        sel = (selezionato == i) ? printables[SELECTOR] : printables[UNSELECTED];
-        out += sel + " " + opzioniFiltrate[i] + '\n';
+    for (int i = shift; (i < shift + size) && (i < opzioniFiltrate.size()); i++) {
+        if (selezionato == i) [[unlikely]]
+            sel = printables[SELECTOR];
+        else
+            sel = printables[UNSELECTED];
+        contenuto.data.emplace_back(sel + " " + opzioniFiltrate[i]);
     }
 
     // Se necessaria, aggiungi ARROW_DOWN
-    selUpDown = (shift < opzioniFiltrate.size() - size) ? printables[ARROW_DOWN] : ' ';
-    out += selUpDown;
+    if (static_cast<int>(shift) < opzioniFiltrate.size() - size) {
+        string selUpDown;
+        selUpDown = printables[ARROW_DOWN];
+        contenuto.data.emplace_back(selUpDown);
+    }
+    contenuto.maxSize = getMaxSize(contenuto.data);
 
     // Imposta il contenuto
-    setContenuto(out, hasBordi);
+    setContenuto();
+    print(true);
 }
 
 // Renderizza la schermata restituendo l'indice della selezione
@@ -391,39 +550,39 @@ int SchermataSelettoreFiltrata::render() {
 
         // Stampa la schermata
         calculate();
-        print(true);
 
         // Leggi l'input
-        switch (const char in = static_cast<char>(_getch())) {
-            case 3:
+        switch (const int in = readKey()) {
+            case CTRLC:
                 exit(0);
-            case 27:
+            case ESC:
                 return -1;
-            case 72:
+            case UP:
                 remSelezionato(selezionato);
-
                 remShift(shift, selezionato);
                 break;
-            case 80:
+            case DOWN:
                 addSelezionato(selezionato, static_cast<int>(opzioniFiltrate.size()));
 
                 addShift(shift, selezionato, size, static_cast<int>(opzioniFiltrate.size()));
                 break;
-            case '\r':
-                CLEAN;
+            case ENTER:
+                if (opzioniFiltrate.empty()) return -1;
                 for (int i = 0; i < opzioni.size(); i++)
                     if (opzioni[i] == opzioniFiltrate[selezionato]) return i;
-            case 8:
-                filtro.pop_back();
+                return -1;
+            case BACKSPACE:
+                if (!filtro.empty())
+                    filtro.pop_back();
                 cambioFiltro = true;
                 break;
-            case 127:
+            case DEL:
                 filtro = "";
                 cambioFiltro = true;
                 break;
             default:
                 if (in > 32) {
-                    filtro += in;
+                    filtro += static_cast<char>(in);
                     cambioFiltro = true;
                 }
                 break;
@@ -442,44 +601,53 @@ SchermataQuestionario::SchermataQuestionario(string  titolo, vector<formElement>
     Schermata(), opzioni(std::move(opzioni)), titolo(std::move(titolo)) {}
 
 void SchermataQuestionario::calculate() {
-    string out;
-
     // Aggiungi il titolo
-    out += titolo + '\n';
+    contenuto = Content(titolo);
+    contenuto.data.reserve(contenuto.data.size() + 2 * opzioni.size()
+        + hasBordi * 2 * ( paddingVertical + 1));
 
     // Aggiungi tutte le opzioni
     for (int i = 0; i < opzioni.size(); i++) {
         // Aggiungi il titolo dell'opzione
-        out += printables[i == selezionato ? SELECTOR : UNSELECTED];
-        out += " " + opzioni[i].titolo + " ";
+        string toAdd;
+        if (i == selezionato) [[unlikely]]
+            toAdd += printables[SELECTOR];
+        else
+            toAdd += printables[UNSELECTED];
+        toAdd += " " + opzioni[i].titolo + " ";
+        contenuto.data.emplace_back(toAdd);
 
         // Aggiungi il corpo
+        string out;
         switch (opzioni[i].questionType) {
             case INSERIMENTO:
-                out += opzioni[i].outString + "\n";
+                contenuto.data.emplace_back(opzioni[i].outString);
                 break;
             case BOOLEANO:
                 out += printables[CONTAIN_LEFT];
                 out += opzioni[i].outInt == 1 ? printables[CHECKED] : printables[UNCHECKED];
                 out += printables[CONTAIN_RIGHT];
+                contenuto.data.emplace_back(out);
                 break;
             case SCALA: {
-                out += '\n';
                 out += printables[CONTAIN_LEFT];
                 for (int s = 0; s < opzioni[i].size; s++) {
                     out += printables[s == opzioni[i].outInt ? CHECKED : UNSELECTED];
                 }
                 out += printables[CONTAIN_RIGHT];
+                contenuto.data.emplace_back(out);
                 break;
             }
         }
 
         // Aggiungi lo spazio sotto
-        out += "\n\n";
-
-        // Imposta il contenuto
-        setContenuto(out, hasBordi);
+        contenuto.data.emplace_back("");
+        contenuto.data.emplace_back("");
     }
+    contenuto.maxSize = getMaxSize(contenuto.data);
+    // Imposta il contenuto
+    setContenuto();
+    print(true);
 }
 
 void SchermataQuestionario::render() {
@@ -487,32 +655,30 @@ void SchermataQuestionario::render() {
 
     while (true) {
         calculate();
-        print(true);
 
-        switch (const char in = static_cast<char>(_getch())) {
-            case 3:
+        switch (const int in = readKey()) {
+            case CTRLC:
                 exit(0);
-            case 27:
+            case ESC:
                 return;
-            case 72:
+            case UP:
                 remSelezionato(selezionato);
                 break;
-            case 80:
+            case DOWN:
                 addSelezionato(selezionato, static_cast<int>(opzioni.size()));
                 break;
-            case '\r':
+            case ENTER:
                 return;
             default: {
                 switch (opzioni[selezionato].questionType) {
                     case INSERIMENTO:
-                        if (in == '\b') {
+                        if (in == BACKSPACE) {
                             if (!opzioni[selezionato].outString.empty()) opzioni[selezionato].outString.pop_back();
                             calculate();
-                            print(true);
                         }
-                        else if (in == 127)
+                        else if (in == DEL)
                             opzioni[selezionato].outString = "";
-                        else opzioni[selezionato].outString += in;
+                        else opzioni[selezionato].outString += static_cast<char>(in);
 
                         break;
                     case BOOLEANO:
@@ -520,9 +686,9 @@ void SchermataQuestionario::render() {
                             opzioni[selezionato].outInt = 1 - opzioni[selezionato].outInt;
                         break;
                     case SCALA:
-                        if ((in == '+' || in == 77) && opzioni[selezionato].outInt < opzioni[selezionato].size - 1)
+                        if ((in == '+' || in == RIGHT) && opzioni[selezionato].outInt < opzioni[selezionato].size - 1)
                             opzioni[selezionato].outInt++;
-                        if ((in == '-' || in == 75) && opzioni[selezionato].outInt > 0)
+                        if ((in == '-' || in == LEFT) && opzioni[selezionato].outInt > 0)
                             opzioni[selezionato].outInt--;
                         break;
                     default:

@@ -2,8 +2,8 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>Simple_CLI</id>
-        <version>1.5.0</version>
-        <title>Multitasking is cool</title>
+        <version>1.6.0</version>
+        <title>Being flexible</title>
         <authors>Jacopo Cicuti</authors>
         <summary>La libreria permette di inizializzare in modo semplicissimo una interfaccia CLI</summary>
         <description>La libreria è fatta per l'utilizzo semplice e rapido di interfacce CLI complete, funzionali e belle</description>
@@ -13,7 +13,10 @@
         <projectUrl>https://github.com/Steel-Mastr/simple_CLI</projectUrl>
         <repository type="git" url="https://github.com/Steel-Mastr/simple_CLI" />
         <tags>CLI semplice</tags>
-        <releaseNotes>Changelog.md</releaseNotes>
+        <releaseNotes>
+        Aggiunto funzionalità cross-plattform e migliorate le prestazioni di print
+        Potete trovare il changelog intero su:
+        https://github.com/Steel-Mastr/simple_CLI/blob/master/Changelog.md</releaseNotes>
 
         <!-- Metadata essenziali -->
         <readme>README.md</readme>
