@@ -2,7 +2,7 @@
 
 ---
 
-## *> Versione 1.6.0 (major):*
+## *> Versione 1.6.1 (patch):*
 
 Sono stati risolti problemi di compatibilità con Linux (supporto Unix/Linux/macOS)
 Il rendering ora ha risolto il problema del jittering ed è diventato più efficiente
@@ -14,6 +14,19 @@ da sostituirsi a clear() e cout
 ##### Patch:
 - Corretti crash su lista filtrata vuota
 - Ottimizzazioni: `reserve`, `getMaxSize` fuori dai loop, `clear()` invece di `= {}`
+
+<!-------------------------------------------------------------->
+
+## - Versione 1.6.0 (major):
+
+Sono stati risolti problemi di compatibilità con Linux (supporto Unix/Linux/macOS)
+Il rendering ora ha risolto il problema del jittering ed è diventato più efficiente
+
+##### Modifiche:
+- Aggiunto lo struct Content (vettore di stringhe + lunghezza massima della riga)
+- La struttura del programma si sviluppa su un vettore di stringhe, togliendo la necessità di ricalcoli continui
+- Non si cancella più l'intero schermo, ma solo l'interfaccia
+- Ora compatibile con Unix/Linux
 
 ---
 
