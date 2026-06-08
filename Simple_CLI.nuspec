@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>Simple_CLI</id>
-        <version>1.6.0</version>
+        <version>1.6.3</version>
         <title>Being flexible</title>
         <authors>Jacopo Cicuti</authors>
         <summary>La libreria permette di inizializzare in modo semplicissimo una interfaccia CLI</summary>

@@ -1,8 +1,10 @@
 #include "Simple_CLI.h"
+
+#include <algorithm>
 #include <utility>
 
-#define CURSOR_UP(n)    "\033[" + to_string(n) + "A"
-#define CURSOR_DOWN(n)  "\033[" + to_string(n) + "B"
+#define CURSOR_UP(n)    ("\033[" + to_string(n) + "A")
+#define CURSOR_DOWN(n)  ("\033[" + to_string(n) + "B")
 #define CLEAR_LINE      "\033[2K"
 #define DELETE_LINE     "\033[M"
 #define DELETE_LOWER    "\033[J"
@@ -52,7 +54,7 @@ int readKey() {
 }
 
 // Gestisce il rendering ripetuto di una stessa stringa
-string ripeti(const int rep, const string& s) {
+string ripeti(const unsigned int rep, const string& s) {
     string out;
     out.reserve(s.size() * rep);
     for (int i = 0; i < rep; i++)
@@ -96,22 +98,38 @@ inline void remShift(int& shift, const int selezionato) {
 // Si sostituisce a cout
 void schermate::print(const string& contenuto) {
     cout << contenuto << flush;
-    for (const char& c : contenuto)
-        if (c == '\n') righeStampate++;
+    righeStampate += std::count(contenuto.begin(), contenuto.end(), '\n');
 }
-// Si sostituisce a cout
+// Si sostituisce a cout (ed inizia in una nuova riga)
 void schermate::println(const string& contenuto) {
     cout << '\n' << contenuto << flush;
-    righeStampate++;
-    for (const char& c : contenuto)
-        if (c == '\n') righeStampate++;
+    righeStampate += std::count(contenuto.begin(), contenuto.end(), '\n') + 1;
 }
+
+// Si sostituisce a cin
+std::string schermate::read() {
+    ++righeStampate;
+    std::string contenuto;
+    std::cin >> contenuto;
+    return contenuto;
+}
+
+// Si sostituisce a cin (ed inizia in una nuova riga)
+std::string schermate::readln() {
+    righeStampate += 2;
+    std::string contenuto;
+    std::cout << '\n';
+    std::cin >> contenuto;
+    return contenuto;
+}
+
 // Cancella n righe
 void schermate::del(const unsigned int count) {
-    if (righeStampate <= 0 || count == 0) [[unlikely]]
+    const unsigned int toDel = min(righeStampate, count);
+    if (toDel == 0) [[unlikely]]
         return;
-    cout << CURSOR_UP(min(righeStampate, count)) << '\r' << DELETE_LOWER << flush;
-    righeStampate = max(0, static_cast<int>(righeStampate) - static_cast<int>(count));
+    cout << CURSOR_UP(toDel) << '\r' << DELETE_LOWER << flush;
+    righeStampate -= toDel;
 }
 // Cancella tutto
 void schermate::clear() {
@@ -163,36 +181,34 @@ vector<string> aggiungiBordi(
     const Content& contenuto,
     const char WallHorizontal = '-', const char WallVertical = '|',
     const int paddingHorizontal = 0, const int paddingVertical = 0) {
-    vector<string> out;
-    out.reserve(contenuto.data.size() + 2 * paddingVertical + 2);
-    //  Riga superiore
-    out.emplace_back(ripeti(contenuto.maxSize + 2 + 2 * paddingHorizontal, {WallHorizontal}));
-    // Righe di padding verticale
-    out.emplace_back(ripeti(paddingVertical, (WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical)));
 
-    // Contenuto
-    for (const string& s : contenuto.data) {
+    vector<string> out;
+    const string paddingRow = WallVertical
+        + ripeti(contenuto.maxSize + 2 * paddingHorizontal, " ")
+        + WallVertical;
+    const string borderRow = ripeti(contenuto.maxSize + 2 + 2 * paddingHorizontal, {WallHorizontal});
+
+    out.reserve(contenuto.data.size() + 2 * paddingVertical + 2);
+
+    out.emplace_back(borderRow);                          // bordo superiore
+    for (int i = 0; i < paddingVertical; i++)
+        out.emplace_back(paddingRow);                     // padding superiore
+
+    for (const string& s : contenuto.data)
         out.emplace_back(
-            // Muro e padding
             WallVertical
             + ripeti(paddingHorizontal, " ")
-            // Contenuto e filler alla fine
             + s
-            + (ripeti(static_cast<int>(contenuto.maxSize - s.length()), " ")
-            // Padding e muro
+            + ripeti(contenuto.maxSize - s.length(), " ")
             + ripeti(paddingHorizontal, " ")
-            + WallVertical)
+            + WallVertical
         );
-    }
 
-    // Padding verticale e riga inferiore
-    out.emplace_back(
-        ripeti(paddingVertical,
-            WallVertical + ripeti(2 + 2 * paddingHorizontal, " ") + WallVertical));
-    out.emplace_back(ripeti(contenuto.maxSize + 2, {WallHorizontal}));
+    for (int i = 0; i < paddingVertical; i++)
+        out.emplace_back(paddingRow);                     // padding inferiore
+    out.emplace_back(borderRow);                          // bordo inferiore
     return out;
 }
-
 
 /*
  *   ========================================
@@ -265,7 +281,13 @@ void Schermata::setContenuto(const vector<string>& cont, const bool bordi = fals
 void Schermata::setContenuto() {
     if (hasBordi)
         contenuto = {
-        aggiungiBordi(contenuto),
+        aggiungiBordi(
+            contenuto,
+            printables[WALL_HORIZONTAL],
+            printables[WALL_VERTICAL],
+            paddingHorizontal,
+            paddingVertical
+            ),
         contenuto.maxSize + 2 * paddingHorizontal + 2
     };
 }
@@ -404,7 +426,7 @@ char SchermataSelettoreCustom::getResult() const { return titoliOpzioni[result];
 */
 
 // Crea una schermata selettore large senza renderizzarla
-SchermataSelettoreLarge::SchermataSelettoreLarge(string titolo, const vector<string> &opzioni, const int size = 9, bool bordi) :
+SchermataSelettoreLarge::SchermataSelettoreLarge(string titolo, const vector<string> &opzioni, const int size, const bool bordi) :
     SchermataSelettore(std::move(titolo), opzioni) {
     this->hasBordi = bordi;
     this->size = size > 2 ? size : 3;

@@ -2,7 +2,7 @@
 
 ---
 
-## *> Versione 1.6.0 (major):*
+## *> Versione 1.6 (major):*
 
 Sono stati risolti problemi di compatibilità con Linux (supporto Unix/Linux/macOS)
 Il rendering ora ha risolto il problema del jittering ed è diventato più efficiente
