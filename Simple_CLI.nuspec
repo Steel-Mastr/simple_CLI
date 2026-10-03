@@ -2,19 +2,21 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <metadata>
         <id>Simple_CLI</id>
-        <version>1.6.3</version>
-        <title>Being flexible</title>
+        <version>1.7.0</version>
+        <title>Being portable</title>
         <authors>Jacopo Cicuti</authors>
         <summary>La libreria permette di inizializzare in modo semplicissimo una interfaccia CLI</summary>
-        <description>La libreria è fatta per l'utilizzo semplice e rapido di interfacce CLI complete, funzionali e belle</description>
+        <description>La libreria è fatta per l'utilizzo semplice e rapido di interfacce CLI complete, funzionali e belle. Header-only: basta includere Simple_CLI.h nel progetto. Supporto anche a C puro tramite c_api.h + c_api.cpp.</description>
         <language>it-IT</language>
 
         <!-- Info progetto -->
         <projectUrl>https://github.com/Steel-Mastr/simple_CLI</projectUrl>
         <repository type="git" url="https://github.com/Steel-Mastr/simple_CLI" />
-        <tags>CLI semplice</tags>
+        <tags>CLI semplice header-only native</tags>
         <releaseNotes>
-        Aggiunto funzionalità cross-plattform e migliorate le prestazioni di print
+        Nuovo: supporto a C puro con src/c_api.h + src/c_api.cpp (handle opachi simple_cli_*, bridge
+        compilato automaticamente nei progetti MSBuild). Rimossa la vecchia API C-style
+        src/c_include.h (solo C++): per C++ si usano direttamente le classi di Simple_CLI.h.
         Potete trovare il changelog intero su:
         https://github.com/Steel-Mastr/simple_CLI/blob/master/Changelog.md</releaseNotes>
 
@@ -26,11 +28,17 @@
     </metadata>
 
     <files>
-        <!-- Header file -->
+        <!-- Umbrella header + struttura src/ preservata (include relativi: .h di base e .hpp schermate) -->
         <file src="Simple_CLI.h" target="build\native\include\" />
+        <file src="src\**\*.h" exclude="src\c_api.h" target="build\native\include\src\" />
+        <file src="src\**\*.hpp" target="build\native\include\src\" />
 
-        <!-- Cpp file -->
-        <file src="Release\Simple_CLI.lib" target="build\native\lib\Win32\Release\" />
+        <!-- API C: header leggibile dal C puro (alla radice degli include) + bridge da compilare -->
+        <file src="src\c_api.h" target="build\native\include\" />
+        <file src="src\c_api.cpp" target="build\native\src\" />
+
+        <!-- MSBuild: aggiunge automaticamente la directory di include al progetto che consuma -->
+        <file src="Simple_CLI.targets" target="build\native\" />
 
         <!-- Documentazione -->
         <file src="README.md" target="" />
