@@ -14,12 +14,12 @@ Simple CLI è una soluzione semplice per l'utilizzo di interfacce CLI in C++ sen
 
 Installazione con .NET CLI:
 ```
-dotnet add package Simple_CLI --version 1.7.0
+dotnet add package Simple_CLI --version 1.7.1
 ```
 
 Installazione con PMC:
 ```
-NuGet\Install-Package Simple_CLI -Version 1.7.0
+NuGet\Install-Package Simple_CLI -Version 1.7.1
 ```
 
 Con il pacchetto NuGet (progetti Visual Studio/MSBuild) la directory degli header viene
