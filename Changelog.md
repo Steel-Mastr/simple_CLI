@@ -2,6 +2,16 @@
 
 ---
 
+## *- Versione 1.7.1 (patch):*
+
+Aggiunta dell'API a git
+
+##### Patch:
+- `src/c_api.h`: file aggiunto a git
+- `src/c_api.cpp`: file aggiunto a git
+
+---
+
 ## *> Versione 1.7.0 (major):*
 
 Supporto a **C puro**: nuovo livello API compilabile da progetti C.
